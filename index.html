@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>INCOME-EXPENSE</title>
+<meta name="theme-color" content="#0A1F44">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="INCOME-EXPENSE">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+:root{--bg:#0A1F44;--card:#12294f;--card2:#0F2A57;--line:#22406f;--ink:#EAF1FB;--ink2:#9db3d6;
+--blue:#29A9F2;--gain:#2FBF87;--loss:#E5566B;--radius:14px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,Segoe UI,Roboto,sans-serif;
+  padding-bottom:env(safe-area-inset-bottom)}
+.wrap{max-width:560px;margin:0 auto;padding:16px 16px 100px}
+h1{font-size:19px;margin:0}
+h2{font-size:15px;margin:0 0 10px}
+p.sub{color:var(--ink2);font-size:13px;line-height:1.5;margin:6px 0 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+button{background:var(--blue);color:#06131F;border:none;border-radius:10px;padding:12px 16px;font-weight:700;
+  font-size:14px;cursor:pointer}
+button.block{width:100%}
+button.ghost{background:none;border:1px solid var(--line);color:var(--ink)}
+button.danger{background:var(--loss);color:#fff}
+button.small{padding:6px 10px;font-size:12px;font-weight:600}
+button:disabled{opacity:.5}
+label{font-size:12px;color:var(--ink2);display:block;margin-bottom:6px}
+input,select,textarea{width:100%;background:#06131F;border:1px solid var(--line);color:var(--ink);
+  border-radius:8px;padding:11px;font-size:14px;margin-bottom:12px;font-family:inherit}
+textarea{resize:vertical;min-height:50px}
+.row{display:flex;gap:10px}
+.row>*{flex:1}
+.chipRow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.chip{padding:7px 13px;border-radius:999px;border:1px solid var(--line);font-size:12.5px;color:var(--ink2);
+  cursor:pointer;background:none}
+.chip.active{background:var(--blue);color:#06131F;border-color:var(--blue);font-weight:700}
+.status{font-size:12px;margin-top:2px}
+.status.ok{color:var(--gain)}
+.status.bad{color:var(--loss)}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#06131F;border:1px solid var(--line);
+  padding:10px 16px;border-radius:999px;font-size:13px;opacity:0;transition:opacity .2s;z-index:50;max-width:88%;text-align:center}
+.toast.show{opacity:1}
+.hidden{display:none !important}
+a{color:var(--blue)}
+
+/* auth */
+#auth{max-width:400px;margin:8vh auto 0;padding:0 16px}
+.authIcon{width:96px;height:96px;border-radius:22px;margin:0 auto 16px;display:block}
+.authLinks{margin-top:14px;text-align:center;font-size:13px;color:var(--ink2)}
+
+/* header */
+header{display:flex;align-items:center;gap:10px;padding:4px 0 14px}
+header .spacer{flex:1}
+.iconBtn{background:none;border:1px solid var(--line);color:var(--ink2);width:38px;height:38px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:16px;padding:0}
+.syncDot{width:8px;height:8px;border-radius:50%;background:var(--gain);display:inline-block}
+.syncDot.busy{background:var(--blue);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* tabs */
+.tabs{display:flex;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:16px}
+.tab{flex:1;text-align:center;padding:10px 4px;border-radius:9px;font-size:13.5px;font-weight:700;color:var(--ink2);cursor:pointer}
+.tab.active{background:var(--blue);color:#06131F}
+
+/* totals */
+.totalsRow{display:flex;gap:10px;margin-bottom:14px}
+.totalCard{flex:1;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.totalCard .lab{font-size:11px;color:var(--ink2);margin-bottom:4px}
+.totalCard .val{font-size:16px;font-weight:800}
+.val.gain{color:var(--gain)}
+.val.loss{color:var(--loss)}
+
+/* list */
+.entry{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.entry:last-child{border-bottom:none}
+.entry .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.entry .dot.income{background:var(--gain)}
+.entry .dot.expense{background:var(--loss)}
+.entry .main{flex:1;min-width:0}
+.entry .cat{font-size:14px;font-weight:600}
+.entry .meta{font-size:11.5px;color:var(--ink2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.entry .amt{font-size:14.5px;font-weight:800;white-space:nowrap}
+.entry .amt.income{color:var(--gain)}
+.entry .amt.expense{color:var(--loss)}
+.empty{color:var(--ink2);font-size:13px;text-align:center;padding:22px 0}
+
+/* breakdown */
+.bdRow{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
+.bdRow:last-child{border-bottom:none}
+
+/* modal */
+.modalBg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:40}
+.modal{background:var(--card);border:1px solid var(--line);border-radius:16px 16px 0 0;padding:20px;width:100%;
+  max-width:560px;max-height:88vh;overflow:auto}
+.modal h2{margin-bottom:14px}
+.fab{position:fixed;right:20px;bottom:calc(20px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;
+  font-size:26px;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.4);z-index:30}
+</style>
+</head>
+<body>
+
+<div id="auth">
+  <img class="authIcon" src="icon-192.png">
+  <h1 style="text-align:center">INCOME-EXPENSE</h1>
+  <p class="sub" style="text-align:center">Sign in to add your income &amp; expenses</p>
+
+  <div class="card" id="screenSignIn" style="margin-top:22px">
+    <h2>Sign in</h2>
+    <label for="siEmail">Email</label>
+    <input type="email" id="siEmail" autocomplete="username">
+    <label for="siPassword">Password</label>
+    <input type="password" id="siPassword" autocomplete="current-password">
+    <button class="block" id="siGo">Sign in</button>
+    <div class="status" id="siStatus"></div>
+    <div class="authLinks">
+      <a href="#" id="toForgot">Forgot password?</a> &middot;
+      <a href="#" id="toSignUp">Create an account</a>
+    </div>
+  </div>
+
+  <div class="card hidden" id="screenSignUp" style="margin-top:22px">
+    <h2>Create account</h2>
+    <label for="suName">Name</label>
+    <input type="text" id="suName">
+    <label for="suFather">Father's name</label>
+    <input type="text" id="suFather">
+    <label for="suEmail">Email</label>
+    <input type="email" id="suEmail" autocomplete="username">
+    <label for="suPhone">Phone number</label>
+    <input type="tel" id="suPhone">
+    <label for="suPassword">Password</label>
+    <input type="password" id="suPassword" autocomplete="new-password">
+    <label for="suPassword2">Confirm password</label>
+    <input type="password" id="suPassword2" autocomplete="new-password">
+    <button class="block" id="suGo">Sign up</button>
+    <div class="status" id="suStatus"></div>
+    <div class="authLinks"><a href="#" id="toSignIn1">Already have an account? Sign in</a></div>
+  </div>
+
+  <div class="card hidden" id="screenForgotRequest" style="margin-top:22px">
+    <h2>Reset password</h2>
+    <label for="frEmail">Your account email</label>
+    <input type="email" id="frEmail">
+    <button class="block" id="frGo">Send reset code</button>
+    <div class="status" id="frStatus"></div>
+    <div class="authLinks"><a href="#" id="toSignIn2">Back to sign in</a></div>
+  </div>
+
+  <div class="card hidden" id="screenForgotVerify" style="margin-top:22px">
+    <h2>Set a new password</h2>
+    <p class="sub" style="margin-bottom:14px">Enter the code sent to <b id="forgotEmailLabel"></b> and choose a new password.</p>
+    <label for="frCode">Code</label>
+    <input type="text" id="frCode" inputmode="numeric" placeholder="6-digit code">
+    <label for="frNewPass">New password</label>
+    <input type="password" id="frNewPass" autocomplete="new-password">
+    <label for="frNewPass2">Confirm new password</label>
+    <input type="password" id="frNewPass2" autocomplete="new-password">
+    <button class="block" id="frVerifyGo">Reset password</button>
+    <div class="status" id="frVerifyStatus"></div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+<div class="wrap">
+  <header>
+    <h1>INCOME-EXPENSE</h1>
+    <div class="spacer"></div>
+    <span class="syncDot" id="syncDot"></span>
+    <button class="iconBtn" id="refreshBtn" title="Refresh">&#8635;</button>
+    <button class="iconBtn" id="settingsBtn" title="Settings">&#9881;</button>
+  </header>
+
+  <div class="chipRow" id="rangeChips">
+    <span class="chip" data-range="today">Today</span>
+    <span class="chip" data-range="week">This week</span>
+    <span class="chip active" data-range="month">This month</span>
+    <span class="chip" data-range="all">All time</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="income">Income</div>
+    <div class="tab" data-tab="expense">Expense</div>
+    <div class="tab" data-tab="summary">Summary</div>
+  </div>
+
+  <div class="totalsRow">
+    <div class="totalCard"><div class="lab">Income</div><div class="val gain" id="totIncome">Rs 0</div></div>
+    <div class="totalCard"><div class="lab">Expense</div><div class="val loss" id="totExpense">Rs 0</div></div>
+    <div class="totalCard"><div class="lab">Net</div><div class="val" id="totNet">Rs 0</div></div>
+  </div>
+
+  <div id="panelIncome">
+    <div class="card"><h2>Income entries</h2><div id="incomeList"></div></div>
+  </div>
+
+  <div id="panelExpense" class="hidden">
+    <div class="card"><h2>Expense entries</h2><div id="expenseList"></div></div>
+  </div>
+
+  <div id="panelSummary" class="hidden">
+    <div class="card">
+      <h2>Income by source</h2>
+      <div id="bdIncome"></div>
+    </div>
+    <div class="card">
+      <h2>Expense by category</h2>
+      <div id="bdExpense"></div>
+    </div>
+    <div class="card">
+      <button class="block ghost" id="exportBtn">Export to Excel (.xlsx)</button>
+      <div class="status" id="exportStatus"></div>
+    </div>
+  </div>
+</div>
+
+<button class="fab" id="fabAdd">+</button>
+</div>
+
+<!-- add/edit modal -->
+<div class="modalBg hidden" id="modalBg">
+  <div class="modal">
+    <h2 id="modalTitle">Add income</h2>
+    <input type="hidden" id="fId">
+    <input type="hidden" id="fType">
+    <label id="fCatLabel" for="fCatSelect">Source</label>
+    <select id="fCatSelect"></select>
+    <input type="text" id="fCatCustom" class="hidden" placeholder="Type source name">
+    <label for="fAmount">Amount (Rs)</label>
+    <input type="number" id="fAmount" inputmode="decimal" placeholder="0" min="0" step="0.01">
+    <label for="fDate">Date</label>
+    <input type="date" id="fDate">
+    <label for="fNote">Note (optional)</label>
+    <textarea id="fNote" placeholder="Any details..."></textarea>
+    <div class="row">
+      <button class="ghost block" id="fCancel">Cancel</button>
+      <button class="block" id="fSave">Save</button>
+    </div>
+    <div class="row" id="fDeleteRow" style="margin-top:8px">
+      <button class="danger block" id="fDelete">Delete entry</button>
+    </div>
+    <div class="status" id="fStatus"></div>
+  </div>
+</div>
+
+<!-- settings modal -->
+<div class="modalBg hidden" id="settingsBg">
+  <div class="modal">
+    <h2>Settings</h2>
+    <p class="sub" style="margin-bottom:14px">Signed in as <b id="whoDisplay"></b>.</p>
+    <button class="block ghost" id="installBtn" style="display:none;margin-bottom:10px">Install app on this device</button>
+    <button class="block ghost" id="signOutBtn">Sign out</button>
+    <div class="status" id="settingsStatus"></div>
+    <div class="row" style="margin-top:16px">
+      <button class="block ghost" id="settingsClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function(){
+var $=function(id){return document.getElementById(id)};
+
+/* ================= CONFIG =================
+   Fill these in from your Supabase project → Project Settings → API
+   before you host this file. */
+var SUPABASE_URL='https://pyzdpmdsuzdgwaxnbbvp.supabase.co';
+var SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5emRwbWRzdXpkZ3dheG5iYnZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4MTc4MDAsImV4cCI6MjEwNTM5MzgwMH0.1sm9i_bJZ7a93iOxB65pkUI1LS-8jbdCh4ik7Ukd9AY';
+/* ============================================ */
+
+var INCOME_SOURCES=['Student Fee','USDT Exchange','Live Trading Session','Other'];
+var EXPENSE_CATEGORIES=['Rent','Staff Salary','Utilities','Marketing','Software / Subscriptions','Bank / Exchange Fees','Equipment','Withdrawal','Miscellaneous','Other'];
+
+var sb=null;
+if(SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase){
+  sb=window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+
+function toast(m){var t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._x);t._x=setTimeout(function(){t.classList.remove('show')},2200)}
+function fmt(n){n=Number(n)||0;return 'Rs '+n.toLocaleString('en-US',{maximumFractionDigits:2})}
+function todayStr(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function escapeHtml(s){return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+
+var state={profile:null, range:'month', tab:'income', rows:[], loading:false};
+
+function showAuthScreen(id){
+  ['screenSignIn','screenSignUp','screenForgotRequest','screenForgotVerify'].forEach(function(s){$(s).classList.add('hidden')});
+  $(id).classList.remove('hidden');
+}
+$('toSignUp').addEventListener('click',function(e){e.preventDefault();showAuthScreen('screenSignUp')});
+$('toSignIn1').addEventListener('click',function(e){e.preventDefault();showAuthScreen('screenSignIn')});
+$('toSignIn2').addEventListener('click',function(e){e.preventDefault();showAuthScreen('screenSignIn')});
+$('toForgot').addEventListener('click',function(e){e.preventDefault();showAuthScreen('screenForgotRequest')});
+
+if(!sb){
+  $('siStatus').textContent='Supabase isn\u2019t configured in this file yet.';
+  $('siStatus').className='status bad';
+}
+
+/* ---------- sign in ---------- */
+$('siGo').addEventListener('click',function(){
+  var email=$('siEmail').value.trim(), pass=$('siPassword').value, st=$('siStatus'), btn=$('siGo');
+  if(!email||!pass){st.textContent='Enter your email and password.';st.className='status bad';return}
+  btn.disabled=true;st.textContent='Signing in\u2026';st.className='status';
+  sb.auth.signInWithPassword({email:email,password:pass}).then(function(res){
+    btn.disabled=false;
+    if(res.error){st.textContent=res.error.message;st.className='status bad';return}
+    enterApp();
+  });
+});
+
+/* ---------- sign up (no email verification) ---------- */
+$('suGo').addEventListener('click',function(){
+  var name=$('suName').value.trim(), father=$('suFather').value.trim(), email=$('suEmail').value.trim(),
+      phone=$('suPhone').value.trim(), p1=$('suPassword').value, p2=$('suPassword2').value,
+      st=$('suStatus'), btn=$('suGo');
+  if(!name||!email||!phone){st.textContent='Fill in your name, email and phone number.';st.className='status bad';return}
+  if(!p1||p1.length<6){st.textContent='Password should be at least 6 characters.';st.className='status bad';return}
+  if(p1!==p2){st.textContent='Passwords don\u2019t match.';st.className='status bad';return}
+  btn.disabled=true;st.textContent='Creating account\u2026';st.className='status';
+  sb.auth.signUp({
+    email:email, password:p1,
+    options:{data:{name:name, father_name:father, phone:phone}}
+  }).then(function(res){
+    if(res.error){btn.disabled=false;st.textContent=res.error.message;st.className='status bad';return}
+    var u=res.data && res.data.user;
+    if(u && u.identities && u.identities.length===0){
+      btn.disabled=false;st.textContent='This email is already registered. Please sign in instead.';st.className='status bad';return
+    }
+    if(res.data && res.data.session){
+      btn.disabled=false;toast('Account created');enterApp();return
+    }
+    // No session came back: try signing in straight away.
+    sb.auth.signInWithPassword({email:email,password:p1}).then(function(r2){
+      btn.disabled=false;
+      if(r2.error){
+        st.textContent=/confirm/i.test(r2.error.message)
+          ? 'Account created, but "Confirm email" is still switched on in Supabase. Turn it off (see README), then sign in.'
+          : r2.error.message;
+        st.className='status bad';return
+      }
+      toast('Account created');enterApp();
+    });
+  });
+});
+
+/* ---------- forgot password ---------- */
+var pendingResetEmail='';
+$('frGo').addEventListener('click',function(){
+  var email=$('frEmail').value.trim(), st=$('frStatus'), btn=$('frGo');
+  if(!email){st.textContent='Enter your account email.';st.className='status bad';return}
+  btn.disabled=true;st.textContent='Sending\u2026';st.className='status';
+  sb.auth.resetPasswordForEmail(email).then(function(res){
+    btn.disabled=false;
+    if(res.error){st.textContent=res.error.message;st.className='status bad';return}
+    pendingResetEmail=email;
+    $('forgotEmailLabel').textContent=email;
+    showAuthScreen('screenForgotVerify');
+  });
+});
+$('frVerifyGo').addEventListener('click',function(){
+  var code=$('frCode').value.trim(), p1=$('frNewPass').value, p2=$('frNewPass2').value,
+      st=$('frVerifyStatus'), btn=$('frVerifyGo');
+  if(!code){st.textContent='Enter the code from your email.';st.className='status bad';return}
+  if(!p1||p1.length<6){st.textContent='Password should be at least 6 characters.';st.className='status bad';return}
+  if(p1!==p2){st.textContent='Passwords don\u2019t match.';st.className='status bad';return}
+  btn.disabled=true;st.textContent='Resetting\u2026';st.className='status';
+  sb.auth.verifyOtp({email:pendingResetEmail, token:code, type:'recovery'}).then(function(res){
+    if(res.error){btn.disabled=false;st.textContent=res.error.message;st.className='status bad';return}
+    sb.auth.updateUser({password:p1}).then(function(res2){
+      btn.disabled=false;
+      if(res2.error){st.textContent=res2.error.message;st.className='status bad';return}
+      toast('Password updated');
+      enterApp();
+    });
+  });
+});
+
+/* ---------- boot ---------- */
+function enterApp(){
+  sb.auth.getUser().then(function(res){
+    var user=res.data && res.data.user;
+    if(!user){showAuthScreen('screenSignIn');return}
+    sb.from('profiles').select('*').eq('id',user.id).single().then(function(pres){
+      state.profile=pres.data || {name:user.email};
+      $('auth').classList.add('hidden');
+      $('app').classList.remove('hidden');
+      $('whoDisplay').textContent=state.profile.name || user.email;
+      load();
+      setInterval(function(){if(document.visibilityState==='visible')load(true)},25000);
+      document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')load(true)});
+    });
+  });
+}
+
+if(sb){
+  sb.auth.getSession().then(function(res){
+    if(res.data && res.data.session){enterApp()}
+  });
+}
+
+/* ---------- date range ---------- */
+function rangeDates(r){
+  var now=new Date();
+  var to=todayStr();
+  if(r==='today')return {from:to,to:to};
+  if(r==='week'){
+    var d=new Date(now);var day=(d.getDay()+6)%7;
+    d.setDate(d.getDate()-day);
+    var from=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    return {from:from,to:to};
+  }
+  if(r==='month'){
+    var from=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-01';
+    return {from:from,to:to};
+  }
+  return {from:null,to:null};
+}
+
+/* ---------- load / render ---------- */
+function load(quiet){
+  if(!sb||state.loading)return;
+  state.loading=true;
+  $('syncDot').classList.add('busy');
+  var rd=rangeDates(state.range);
+  var q=sb.from('transactions').select('*').order('txn_date',{ascending:false}).order('created_at',{ascending:false});
+  if(rd.from)q=q.gte('txn_date',rd.from);
+  if(rd.to)q=q.lte('txn_date',rd.to);
+  q.then(function(res){
+    state.loading=false;
+    $('syncDot').classList.remove('busy');
+    if(res.error){if(!quiet)toast('Could not sync \u2014 check your connection');return}
+    state.rows=res.data||[];
+    render();
+  });
+}
+
+function render(){
+  var income=state.rows.filter(function(r){return r.type==='income'});
+  var expense=state.rows.filter(function(r){return r.type==='expense'});
+  var ti=income.reduce(function(s,r){return s+Number(r.amount)},0);
+  var te=expense.reduce(function(s,r){return s+Number(r.amount)},0);
+  $('totIncome').textContent=fmt(ti);
+  $('totExpense').textContent=fmt(te);
+  var net=ti-te;
+  var netEl=$('totNet');netEl.textContent=fmt(net);
+  netEl.className='val '+(net>=0?'gain':'loss');
+
+  renderList('incomeList', income);
+  renderList('expenseList', expense);
+  renderBreakdown('bdIncome', income);
+  renderBreakdown('bdExpense', expense);
+}
+
+function renderList(elId, rows){
+  var el=$(elId);
+  if(!rows.length){el.innerHTML='<div class="empty">No entries in this range.</div>';return}
+  el.innerHTML='';
+  rows.forEach(function(r){
+    var div=document.createElement('div');
+    div.className='entry';
+    div.innerHTML=
+      '<span class="dot '+r.type+'"></span>'+
+      '<div class="main"><div class="cat">'+escapeHtml(r.category)+'</div>'+
+      '<div class="meta">'+r.txn_date+(r.note?' \u00b7 '+escapeHtml(r.note):'')+'</div></div>'+
+      '<div class="amt '+r.type+'">'+(r.type==='income'?'+':'-')+fmt(r.amount)+'</div>';
+    div.addEventListener('click',function(){openEdit(r)});
+    el.appendChild(div);
+  });
+}
+
+function renderBreakdown(elId, rows){
+  var el=$(elId);
+  var byCat={};
+  rows.forEach(function(r){byCat[r.category]=(byCat[r.category]||0)+Number(r.amount)});
+  var cats=Object.keys(byCat).sort(function(a,b){return byCat[b]-byCat[a]});
+  if(!cats.length){el.innerHTML='<div class="empty">Nothing yet.</div>';return}
+  el.innerHTML=cats.map(function(c){
+    return '<div class="bdRow"><span>'+escapeHtml(c)+'</span><span>'+fmt(byCat[c])+'</span></div>';
+  }).join('');
+}
+
+/* ---------- tabs / range ---------- */
+document.querySelectorAll('.tab').forEach(function(t){
+  t.addEventListener('click',function(){
+    document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active')});
+    t.classList.add('active');
+    state.tab=t.getAttribute('data-tab');
+    ['panelIncome','panelExpense','panelSummary'].forEach(function(id){$(id).classList.add('hidden')});
+    $('panel'+state.tab.charAt(0).toUpperCase()+state.tab.slice(1)).classList.remove('hidden');
+    $('fabAdd').style.display=(state.tab==='summary')?'none':'flex';
+  });
+});
+document.querySelectorAll('#rangeChips .chip').forEach(function(c){
+  c.addEventListener('click',function(){
+    document.querySelectorAll('#rangeChips .chip').forEach(function(x){x.classList.remove('active')});
+    c.classList.add('active');
+    state.range=c.getAttribute('data-range');
+    load();
+  });
+});
+$('refreshBtn').addEventListener('click',function(){load()});
+
+/* ---------- add / edit modal ---------- */
+function optionsFor(type){return (type==='income'?INCOME_SOURCES:EXPENSE_CATEGORIES)}
+function openAdd(){
+  var type=(state.tab==='expense')?'expense':'income';
+  $('modalTitle').textContent='Add '+type;
+  $('fId').value='';$('fType').value=type;
+  $('fCatLabel').textContent=(type==='income'?'Source':'Category');
+  fillSelect(type,'');
+  $('fAmount').value='';
+  $('fDate').value=todayStr();
+  $('fNote').value='';
+  $('fStatus').textContent='';
+  $('fDeleteRow').classList.add('hidden');
+  $('modalBg').classList.remove('hidden');
+}
+function openEdit(r){
+  $('modalTitle').textContent='Edit '+r.type;
+  $('fId').value=r.id;$('fType').value=r.type;
+  $('fCatLabel').textContent=(r.type==='income'?'Source':'Category');
+  fillSelect(r.type,r.category);
+  $('fAmount').value=r.amount;
+  $('fDate').value=r.txn_date;
+  $('fNote').value=r.note||'';
+  $('fStatus').textContent='';
+  $('fDeleteRow').classList.remove('hidden');
+  $('modalBg').classList.remove('hidden');
+}
+function fillSelect(type,current){
+  var opts=optionsFor(type);
+  var sel=$('fCatSelect');
+  sel.innerHTML=opts.map(function(o){return '<option value="'+o+'">'+o+'</option>'}).join('');
+  if(current && opts.indexOf(current)===-1){
+    sel.value='Other';$('fCatCustom').classList.remove('hidden');$('fCatCustom').value=current;
+  }else{
+    sel.value=current||opts[0];$('fCatCustom').classList.add('hidden');$('fCatCustom').value='';
+  }
+}
+$('fCatSelect').addEventListener('change',function(){
+  if(this.value==='Other'){$('fCatCustom').classList.remove('hidden');$('fCatCustom').focus()}
+  else{$('fCatCustom').classList.add('hidden')}
+});
+$('fabAdd').addEventListener('click',openAdd);
+$('fCancel').addEventListener('click',function(){$('modalBg').classList.add('hidden')});
+
+$('fSave').addEventListener('click',function(){
+  var id=$('fId').value, type=$('fType').value;
+  var cat=$('fCatSelect').value;
+  if(cat==='Other')cat=$('fCatCustom').value.trim();
+  var amount=parseFloat($('fAmount').value);
+  var date=$('fDate').value;
+  var note=$('fNote').value.trim();
+  var st=$('fStatus');
+  if(!cat){st.textContent='Enter a '+(type==='income'?'source':'category')+'.';st.className='status bad';return}
+  if(!amount||amount<=0){st.textContent='Enter a valid amount.';st.className='status bad';return}
+  if(!date){st.textContent='Pick a date.';st.className='status bad';return}
+  st.textContent='Saving\u2026';st.className='status';
+  var p=id?
+    sb.from('transactions').update({category:cat,amount:amount,note:note,txn_date:date}).eq('id',id):
+    sb.from('transactions').insert({type:type,category:cat,amount:amount,note:note,txn_date:date});
+  p.then(function(res){
+    if(res.error){st.textContent=res.error.message;st.className='status bad';return}
+    $('modalBg').classList.add('hidden');
+    toast('Saved');
+    load();
+  });
+});
+
+$('fDelete').addEventListener('click',function(){
+  var id=$('fId').value;
+  if(!id)return;
+  if(!confirm('Delete this entry?'))return;
+  sb.from('transactions').delete().eq('id',id).then(function(res){
+    if(res.error){toast('Could not delete');return}
+    $('modalBg').classList.add('hidden');
+    toast('Deleted');
+    load();
+  });
+});
+
+/* ---------- settings ---------- */
+$('settingsBtn').addEventListener('click',function(){$('settingsBg').classList.remove('hidden')});
+$('settingsClose').addEventListener('click',function(){$('settingsBg').classList.add('hidden')});
+$('signOutBtn').addEventListener('click',function(){
+  sb.auth.signOut().then(function(){location.reload()});
+});
+
+/* ---------- export ---------- */
+$('exportBtn').addEventListener('click',function(){
+  var st=$('exportStatus');
+  if(!window.XLSX){st.textContent='Export library did not load \u2014 check your internet connection.';st.className='status bad';return}
+  var income=state.rows.filter(function(r){return r.type==='income'});
+  var expense=state.rows.filter(function(r){return r.type==='expense'});
+  var incRows=income.map(function(r){return {Date:r.txn_date,Source:r.category,'Amount (Rs)':Number(r.amount),Note:r.note||''}});
+  var expRows=expense.map(function(r){return {Date:r.txn_date,Category:r.category,'Amount (Rs)':Number(r.amount),Note:r.note||''}});
+  var ti=income.reduce(function(s,r){return s+Number(r.amount)},0);
+  var te=expense.reduce(function(s,r){return s+Number(r.amount)},0);
+  var rd=rangeDates(state.range);
+  var summaryRows=[
+    {Metric:'Range', Value:(rd.from?rd.from+' to '+rd.to:'All time')},
+    {Metric:'Total Income (Rs)', Value:ti},
+    {Metric:'Total Expense (Rs)', Value:te},
+    {Metric:'Net (Rs)', Value:ti-te}
+  ];
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), 'Summary');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(incRows), 'Income');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(expRows), 'Expense');
+  var fname='income-expense-'+state.range+'-'+todayStr()+'.xlsx';
+  XLSX.writeFile(wb, fname);
+  st.textContent='Downloaded '+fname;st.className='status ok';
+});
+
+/* ---------- manifest ---------- */
+try{
+  var man={name:"INCOME-EXPENSE",short_name:"INCOME-EXPENSE",start_url:"./",scope:"./",id:"/ledger-employee",
+    display:"standalone",background_color:"#0A1F44",theme_color:"#0A1F44",
+    icons:[
+      {src:new URL('icon-192.png',location.href).href,sizes:"192x192",type:"image/png",purpose:"any"},
+      {src:new URL('icon-512.png',location.href).href,sizes:"512x512",type:"image/png",purpose:"any"}
+    ]};
+  var ml=document.createElement('link');ml.rel='manifest';
+  ml.href=URL.createObjectURL(new Blob([JSON.stringify(man)],{type:'application/manifest+json'}));
+  document.head.appendChild(ml);
+}catch(e){}
+
+/* ---------- service worker ---------- */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('./sw.js').catch(function(){});
+  });
+}
+
+/* ---------- install prompt ---------- */
+var deferred=null;
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault();deferred=e;
+  $('installBtn').style.display='block';
+});
+$('installBtn').addEventListener('click',function(){
+  if(!deferred)return;
+  deferred.prompt();
+  deferred=null;
+  $('installBtn').style.display='none';
+});
+})();
+</script>
+</body>
+</html>
